@@ -1,7 +1,7 @@
 --[[
 	Author      : Lopapon
 	Module      : Server/Entities/PlayerEntity
-	Description : Wrapper runtime autour d'un Player -- etat de run (HP, XP, Kills),
+	Description : Wrapper runtime autour d'un Player -- etat de run (HP, XP, Kills, RunLevel),
 	              distinct de PersistentData (DataService). Cree au CharacterAdded,
 	              detruit au CharacterRemoving/PlayerRemoving.
 ]]
@@ -26,6 +26,7 @@ function	PlayerEntity.new(player: Player, character: Model)
 	self.InRun = false
 	self.RunId = nil :: number?
 	self.CurrentXP = 0
+	self.RunLevel = 1
 	self.Kills = 0
 
 	self.HealthChanged = Nova.Signal.new()
@@ -61,6 +62,7 @@ function	PlayerEntity:EnterRun(runId: number)
 	self.InRun = true
 	self.RunId = runId
 	self.CurrentXP = 0
+	self.RunLevel = 1
 	self.Kills = 0
 end
 
