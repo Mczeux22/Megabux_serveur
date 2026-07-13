@@ -20,7 +20,7 @@ local Logger = require(script.Parent.Parent.Core.Logger)
 local Maid = require(script.Parent.Parent.Core.Maid)
 local EventBus = require(script.Parent.Parent.Core.EventBus)
 local PlayerService = require(script.Parent.PlayerService)
-local StageService = require(script.Parent.StageService)
+local ZoneService = require(script.Parent.ZoneService)
 local FreezeService = require(script.Parent.FreezeService)
 
 local log = Logger.new("RunService")
@@ -57,20 +57,23 @@ function Run.new(players: { Player })
 	self.MapClone = nil :: Model?
 
 	self.Freeze = FreezeService.new(self.RunId)
-	self.Stage = StageService.new(self.RunId, self.Freeze)
+	self.Zone = ZoneService.new(self.RunId, self.Freeze)
 
 	self.Maid:GiveTask(self.Freeze)
-	self.Maid:GiveTask(self.Stage)
+	self.Maid:GiveTask(self.Zone)
 
 	return self
 end
 
 function Run:CloneMap(): boolean
+	local JoinDataService = require(script.Parent.JoinDataService)
+	local mapId = (self.Players[1] and JoinDataService:GetMapId(self.Players[1])) or "DefaultMap"
+
 	local template = ServerStorage:FindFirstChild("MapTemplates")
-		and ServerStorage.MapTemplates:FindFirstChild("DefaultMap")
+		and ServerStorage.MapTemplates:FindFirstChild(mapId)
 
 	if not template then
-		log:Error("MapTemplates.DefaultMap introuvable dans ServerStorage - impossible de creer la run", self.RunId)
+		log:Error("MapTemplates." .. mapId .. " introuvable dans ServerStorage - impossible de creer la run", self.RunId)
 		return false
 	end
 
@@ -118,6 +121,22 @@ function Run:TeleportPlayersOut()
 	end
 end
 
+function Run:OpenBarriersForZone(zoneIndex: number)
+	local CollectionService = game:GetService("CollectionService")
+
+	for _, barrier in ipairs(CollectionService:GetTagged("ZoneBarrier")) do
+		if barrier:IsDescendantOf(self.MapClone) and barrier:GetAttribute("OpensAtZone") == zoneIndex then
+			if barrier:IsA("BasePart") then
+				barrier.CanCollide = false
+				barrier.Transparency = 1
+			end
+			barrier:SetAttribute("Opened", true)
+			EventBus:Publish("MistActivated", self.RunId, barrier)
+			log:Info("Barriere ouverte pour la zone", zoneIndex, "(run", self.RunId, ")")
+		end
+	end
+end
+
 function Run:Start()
 	if not self:CloneMap() then
 		return false
@@ -125,7 +144,10 @@ function Run:Start()
 
 	self.State = "Active"
 	self:TeleportPlayersIn()
-	self.Stage:Start()
+	self.Zone:Start()
+	self.Zone.ZoneAdvanced:Connect(function(zoneIndex)
+		self:OpenBarriersForZone(zoneIndex)
+	end)
 
 	EventBus:Publish("RunStarted", self.RunId, self.Players)
 	log:Info("Run", self.RunId, "demarree avec", #self.Players, "joueur(s)")
@@ -148,7 +170,7 @@ function Run:End()
 	end
 	self.State = "Ending"
 
-	self.Stage:Stop()
+	self.Zone:Stop()
 	self:TeleportPlayersOut()
 
 	EventBus:Publish("RunEnded", self.RunId)

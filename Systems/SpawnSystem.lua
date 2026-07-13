@@ -50,7 +50,7 @@ function SpawnSystem:Update(dt: number)
 
 		timerData.Accumulator += dt
 
-		local elapsedTime = run.Stage:GetElapsedTime()
+		local elapsedTime = run.Zone:GetElapsedTime()
 		local difficultyMultiplier = DifficultyService:GetDifficultyMultiplier(elapsedTime, #run.Players)
 
 		-- Plus la difficulte monte, plus l'intervalle raccourcit (min 0.5s pour eviter le spam total)

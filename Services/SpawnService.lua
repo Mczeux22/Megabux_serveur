@@ -113,10 +113,10 @@ function SpawnService:TrySpawnMob(runId: number): any?
 	end
 
 	local run = data.Run
-	local stageIndex = run.Stage:GetStageIndex()
-	local elapsedTime = run.Stage:GetElapsedTime()
+	local zoneIndex = run.Zone:GetZoneIndex()
+	local elapsedTime = run.Zone:GetElapsedTime()
 
-	local availableMobs = MobConfig.GetAvailableAtStage(stageIndex)
+	local availableMobs = MobConfig.GetAvailableAtZone(zoneIndex)
 	local mobConfigEntry = pickWeightedMob(availableMobs)
 	if not mobConfigEntry then
 		return nil

@@ -51,13 +51,13 @@ local function pickBossSpawnPosition(run: any): CFrame?
 	return CFrame.new(rootPart.Position + Vector3.new(0, 0, -30))
 end
 
-function BossService:CheckStageForBoss(runId: number, stageIndex: number)
+function BossService:CheckZoneForBoss(runId: number, zoneIndex: number)
 	local data = BossService._runData[runId]
 	if not data or data.ActiveBoss then
 		return -- deja un boss actif sur cette run, pas de double spawn
 	end
 
-	local bossConfigEntry = BossConfig.GetBossForStage(stageIndex)
+	local bossConfigEntry = BossConfig.GetBossForZone(zoneIndex)
 	if not bossConfigEntry then
 		return
 	end
@@ -85,7 +85,7 @@ function BossService:CheckStageForBoss(runId: number, stageIndex: number)
 		EventBus:Publish("MobDied", runId, boss) -- RewardService distribue XP/Gold automatiquement
 	end)
 
-	log:Info("Boss", bossConfigEntry.Id, "invoque (run", runId, ", stage", stageIndex, ")")
+	log:Info("Boss", bossConfigEntry.Id, "invoque (run", runId, ", zone", zoneIndex, ")")
 end
 
 function BossService:Init()
@@ -101,11 +101,11 @@ function BossService:Init()
 			ActiveBoss = nil,
 		}
 
-		-- StageAdvanced est un Nova.Signal propre a l'instance StageService de la run.
-		-- Sa cleanup est deja geree par run.Maid (StageService:Destroy() a la fin de run),
+		-- ZoneAdvanced est un Nova.Signal propre a l'instance ZoneService de la run.
+		-- Sa cleanup est deja geree par run.Maid (ZoneService:Destroy() a la fin de run),
 		-- pas besoin de gerer cette connexion manuellement ici.
-		run.Stage.StageAdvanced:Connect(function(stageIndex)
-			BossService:CheckStageForBoss(runId, stageIndex)
+		run.Zone.ZoneAdvanced:Connect(function(zoneIndex)
+			BossService:CheckZoneForBoss(runId, zoneIndex)
 		end)
 	end)
 
