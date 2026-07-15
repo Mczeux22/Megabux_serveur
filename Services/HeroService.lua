@@ -12,7 +12,7 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local HeroConfig = require(ReplicatedStorage.Shared.Config.HeroConfig)
+local HeroConfig = require(game.ReplicatedStorage.Shared.Megabux_shared.Config.HeroConfig)
 
 local Logger = require(script.Parent.Parent.Core.Logger)
 local EventBus = require(script.Parent.Parent.Core.EventBus)

@@ -10,9 +10,9 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Nova = require(ReplicatedStorage.Shared.Nova)
-local LootConfig = require(ReplicatedStorage.Shared.Config.LootConfig)
-local ChestConfig = require(ReplicatedStorage.Shared.Config.ChestConfig)
+local Nova = require(game.ReplicatedStorage.Shared.Nova)
+local LootConfig = require(game.ReplicatedStorage.Shared.Megabux_shared.Config.LootConfig)
+local ChestConfig = require(game.ReplicatedStorage.Shared.Megabux_shared.Config.ChestConfig)
 
 local Logger = require(script.Parent.Parent.Core.Logger)
 local log = Logger.new("LootService")

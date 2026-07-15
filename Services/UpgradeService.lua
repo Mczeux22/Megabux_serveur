@@ -14,7 +14,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Nova = require(ReplicatedStorage.Shared.Nova)
-local UpgradeConfig = require(ReplicatedStorage.Shared.Config.UpgradeConfig)
+local UpgradeConfig = require(game.ReplicatedStorage.Shared.Megabux_shared.Config.UpgradeConfig)
 
 local Logger = require(script.Parent.Parent.Core.Logger)
 local EventBus = require(script.Parent.Parent.Core.EventBus)

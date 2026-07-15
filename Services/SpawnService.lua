@@ -9,7 +9,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Nova = require(ReplicatedStorage.Shared.Nova)
-local MobConfig = require(ReplicatedStorage.Shared.Config.MobConfig)
+local MobConfig = require(game.ReplicatedStorage.Shared.Megabux_shared.Config.MobConfig)
 
 local Logger = require(script.Parent.Parent.Core.Logger)
 local EventBus = require(script.Parent.Parent.Core.EventBus)

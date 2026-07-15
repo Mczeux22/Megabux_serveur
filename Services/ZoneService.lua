@@ -47,6 +47,11 @@ function ZoneService.new(runId: number, freezeService: any)
 end
 
 function ZoneService:Start()
+	-- Garde: si TotalElapsedTime n'existe pas, c'est que Start est appele
+	-- par le ServiceManager sur la classe (pas une instance .new()). On ignore.
+	if self.TotalElapsedTime == nil then
+		return
+	end
 	if self.Running then
 		return
 	end

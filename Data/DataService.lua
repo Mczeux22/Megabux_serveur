@@ -49,6 +49,9 @@ end
 -- Charge la donnee d'un joueur (appele au PlayerAdded)
 function	DataService:_load(player: Player)
 	local userId = player.UserId
+	if DataService._cache[userId] or DataService._loadedSignals[userId] then
+		return -- deja charge ou chargement en cours
+	end
 	DataService._loadedSignals[userId] = Nova.Signal.new()
 
 	local ok, raw = attemptWithRetry(function()
@@ -97,6 +100,7 @@ function	DataService:_save(player: Player): boolean
 end
 
 -- Attend que le chargement soit termine puis retourne la donnee (bloquant via Signal:Wait)
+-- Si aucun chargement n'a ete initie, on le declenche pour eviter de retourner un template vide
 function	DataService:Get(player: Player): { [any]: any }
 	local userId = player.UserId
 	if DataService._cache[userId] then
@@ -108,7 +112,20 @@ function	DataService:Get(player: Player): { [any]: any }
 		return signal:Wait()
 	end
 
-	log:Warn("Get() appele avant chargement pour", player.Name, "- donnee introuvable")
+	-- Aucun chargement en cours: on le declenche maintenant (synchrone)
+	log:Warn("Get() appele avant chargement pour", player.Name, "- chargement immediat")
+	DataService:_load(player)
+
+	-- _load termine (synchrone) ou garde (deja lance ailleurs)
+	if DataService._cache[userId] then
+		return DataService._cache[userId]
+	end
+
+	signal = DataService._loadedSignals[userId]
+	if signal then
+		return signal:Wait()
+	end
+
 	return DataTemplate.new()
 end
 

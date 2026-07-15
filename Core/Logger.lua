@@ -11,7 +11,7 @@ Logger.__index = Logger
 export type Level = "Debug" | "Info" | "Warn" | "Error"
 
 -- Change en "Info" ou "Warn" en prod pour couper les logs de debug
-Logger.MinLevel: Level = "Debug"
+Logger.MinLevel = "Debug"
 
 local LEVEL_ORDER = { Debug = 1, Info = 2, Warn = 3, Error = 4 }
 
