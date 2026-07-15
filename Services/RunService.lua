@@ -22,6 +22,7 @@ local EventBus = require(script.Parent.Parent.Core.EventBus)
 local PlayerService = require(script.Parent.PlayerService)
 local ZoneService = require(script.Parent.ZoneService)
 local FreezeService = require(script.Parent.FreezeService)
+local JoinDataService = require(script.Parent:FindFirstChild("JoinDataService") or error("JoinDataService module introuvable dans Services"))
 
 local log = Logger.new("RunService")
 
@@ -66,7 +67,6 @@ function Run.new(players: { Player })
 end
 
 function Run:CloneMap(): boolean
-	local JoinDataService = require(script.Parent.JoinDataService)
 	local mapId = (self.Players[1] and JoinDataService:GetMapId(self.Players[1])) or "DefaultMap"
 
 	local template = ServerStorage:FindFirstChild("MapTemplates")

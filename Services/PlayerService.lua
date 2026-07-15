@@ -44,14 +44,11 @@ function	PlayerService:GetData(player: Player): { [any]: any }
 end
 
 function	PlayerService:Init()
+	-- Init: uniquement les abonnements (pas d'actions qui declenchent d'autres services)
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterAdded:Connect(function(character)
 			onCharacterAdded(player, character)
 		end)
-
-		if player.Character then
-			onCharacterAdded(player, player.Character)
-		end
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)
@@ -62,15 +59,19 @@ function	PlayerService:Init()
 			PlayerService._entities[player.UserId] = nil
 		end
 	end)
+end
 
-	-- Deja connectes si le script reload en Studio
+function	PlayerService:Start()
+	-- Start: tous les services sont initialises, on peut traiter les joueurs deja connectes
+	-- (evite que onCharacterAdded -> EventBus:Publish("PlayerReady") -> autres services
+	--  n'appelle DataService:Get() avant que DataService soit pret)
 	for _, player in ipairs(Players:GetPlayers()) do
-		if player.Character then
-			onCharacterAdded(player, player.Character)
-		end
 		player.CharacterAdded:Connect(function(character)
 			onCharacterAdded(player, character)
 		end)
+		if player.Character then
+			onCharacterAdded(player, player.Character)
+		end
 	end
 end
 

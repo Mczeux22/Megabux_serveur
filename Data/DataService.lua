@@ -27,6 +27,7 @@ local playerStore = DataStoreService:GetDataStore("PlayerData_v1")
 
 DataService._cache = {} :: { [number]: { [any]: any } }
 DataService._loadedSignals = {} :: { [number]: any } -- Nova.Signal, fire une fois le chargement termine
+DataService._loading = {} :: { [number]: boolean } -- evite le double-chargement
 DataService._SAVE_RETRIES = 3
 DataService._RETRY_DELAY = 2 -- secondes, double a chaque echec
 
@@ -49,10 +50,13 @@ end
 -- Charge la donnee d'un joueur (appele au PlayerAdded)
 function	DataService:_load(player: Player)
 	local userId = player.UserId
-	if DataService._cache[userId] or DataService._loadedSignals[userId] then
+	if DataService._cache[userId] or DataService._loading[userId] then
 		return -- deja charge ou chargement en cours
 	end
-	DataService._loadedSignals[userId] = Nova.Signal.new()
+	DataService._loading[userId] = true
+	if not DataService._loadedSignals[userId] then
+		DataService._loadedSignals[userId] = Nova.Signal.new()
+	end
 
 	local ok, raw = attemptWithRetry(function()
 		return playerStore:GetAsync("Player_" .. userId)
@@ -71,6 +75,7 @@ function	DataService:_load(player: Player)
 	end
 
 	DataService._cache[userId] = data
+	DataService._loading[userId] = nil
 	DataService._loadedSignals[userId]:Fire(data)
 	log:Info("Donnees chargees pour", player.Name)
 end
@@ -112,21 +117,14 @@ function	DataService:Get(player: Player): { [any]: any }
 		return signal:Wait()
 	end
 
-	-- Aucun chargement en cours: on le declenche maintenant (synchrone)
-	log:Warn("Get() appele avant chargement pour", player.Name, "- chargement immediat")
-	DataService:_load(player)
-
-	-- _load termine (synchrone) ou garde (deja lance ailleurs)
-	if DataService._cache[userId] then
-		return DataService._cache[userId]
-	end
-
-	signal = DataService._loadedSignals[userId]
-	if signal then
-		return signal:Wait()
-	end
-
-	return DataTemplate.new()
+	-- Aucun chargement en cours et aucun signal: on cree le signal et on lance le chargement
+	-- (race condition: Get() appele avant que PlayerAdded -> _load ait eu le temps de s'executer)
+	log:Info("Get() appele avant chargement pour", player.Name, "- demarrage du chargement")
+	DataService._loadedSignals[userId] = Nova.Signal.new()
+	task.spawn(function()
+		DataService:_load(player)
+	end)
+	return DataService._loadedSignals[userId]:Wait()
 end
 
 function	DataService:Set(player: Player, key: string, value: any)
@@ -136,17 +134,32 @@ end
 
 function	DataService:Init()
 	Players.PlayerAdded:Connect(function(player)
-		DataService:_load(player)
+		local userId = player.UserId
+		-- Pre-creer le signal synchronement pour que Get() puisse attendre
+		-- meme si task.spawn n'a pas encore execute _load
+		if not DataService._loadedSignals[userId] then
+			DataService._loadedSignals[userId] = Nova.Signal.new()
+		end
+		task.spawn(function()
+			DataService:_load(player)
+		end)
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)
 		DataService:_save(player)
 		DataService._cache[player.UserId] = nil
 		DataService._loadedSignals[player.UserId] = nil
+		DataService._loading[player.UserId] = nil
 	end)
 
 	-- Deja connectes si le script reload en Studio pendant les tests
+	-- Pre-creer les signaux synchronement pour que Get() puisse attendre
+	-- meme si task.spawn n'a pas encore execute _load
 	for _, player in ipairs(Players:GetPlayers()) do
+		local userId = player.UserId
+		if not DataService._cache[userId] and not DataService._loadedSignals[userId] then
+			DataService._loadedSignals[userId] = Nova.Signal.new()
+		end
 		task.spawn(function()
 			DataService:_load(player)
 		end)
